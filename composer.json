@@ -1,0 +1,12 @@
+{
+  "name": "sers/yii-mail",
+  "description": "Yii send mail",
+  "keywords": ["yii-mail"],
+  "license": "BSD-3-Clause",
+  "type": "yii-extension",
+  "require": {
+    "yiisoft/yii":"1.1.14",
+    "sers/yii-config": "dev-master",
+    "swiftmailer/swiftmailer": "v5.0.1"
+  }
+}
