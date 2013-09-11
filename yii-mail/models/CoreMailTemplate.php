@@ -59,7 +59,7 @@ class CoreMailTemplate extends EActiveRecord
 		// will receive user inputs.
 		return array(
 			array('event_id, from, to, content_type, body, state', 'required'),
-			array('state', 'in', 'range' => array_flip($this->getStates())),
+			array('state', 'in', 'range' => array_flip($this->getStates()), 'allowEmpty' => true),
 			array('content_type', 'in', 'range' => array_flip($this->getContentTypes())),
 			array('priority', 'in', 'range' => array_flip($this->getPriorities())),
 			array('event_id', 'in', 'range' => array_flip(CoreMailEvent::getEventsArray())),
