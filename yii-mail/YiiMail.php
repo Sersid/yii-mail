@@ -55,6 +55,16 @@ class YiiMail extends CApplicationComponent
 	 * @var string
 	 */
 	protected $siteUrl;
+	
+	/**
+	 * @var string
+	 */
+	public $eventModel = "CoreMailEvent";
+	
+	/**
+	 * @var string
+	 */
+	public $templateModel = "CoreMailTemplate";
 
 	/**
 	 * Init component
@@ -108,66 +118,101 @@ class YiiMail extends CApplicationComponent
 	 */
 	public function send($eventCode, array $params = null)
 	{
-		$event = CoreMailEvent::model()->actived()->findByAttributes(array(
-			'code' => $eventCode,
-		), array(
-			'select' => 't.id',
-			'with' => array(
-				'templates' => array(
-					'condition' => 'templates.state='.CoreMailTemplate::STATE_ACTIVE,
-					'select' => 'subject, from, to, сс, bss, reply_to, priority, content_type, body'
-				),
-			),
-		));
-
-		if(!empty($event))
+		if(is_array($eventCode))
 		{
-			$params["#SITE_NAME#"] = $this->getSiteName();
-			$params["#SITE_EMAIL#"] = $this->getSiteEmail();
-			$params["#SITE_URL#"] = $this->getSiteUrl();
+			if(empty($eventCode["from"]) || empty($eventCode["to"]))
+				return false;
 
-			foreach($event->templates as $template)
+			// Create the message
+			$message = Swift_Message::newInstance();
+			$message->setFrom($eventCode["from"]);
+			$message->setTo($eventCode["to"]);
+
+			if(!empty($eventCode["subject"]))
+				$message->setSubject($eventCode["subject"]);
+
+			if(!empty($eventCode["content_type"]))
+				$message->setContentType($eventCode["content_type"]);
+
+			if(!empty($eventCode["body"]))
+				$message->setBody($eventCode["body"]);
+
+			if(!empty($eventCode["priority"]))
+				$message->setPriority($eventCode["priority"]);
+
+			if(!empty($eventCode["reply_to"]))
+				$message->setReplyTo($eventCode["reply_to"]);
+
+			if(!empty($eventCode["cc"]))
+				$message->setCc($eventCode["cc"]);
+
+			if(!empty($eventCode["bcc"]))
+				$message->setBcc($eventCode["bcc"]);
+		}
+		else
+		{
+			$eventModel = $this->eventModel;
+			$templateModel = $this->templateModel;
+			$event = $eventModel::model()->actived()->findByAttributes(array(
+				'code' => $eventCode,
+			), array(
+				'select' => 't.id',
+				'with' => array(
+					'templates' => array(
+						'condition' => 'templates.state='.$templateModel::STATE_ACTIVE,
+						'select' => 'subject, from, to, сс, bss, reply_to, priority, content_type, body'
+					),
+				),
+			));
+
+			if(!empty($event))
 			{
-				$template->replaceData($params);
+				$params["#SITE_NAME#"] = $this->getSiteName();
+				$params["#SITE_EMAIL#"] = $this->getSiteEmail();
+				$params["#SITE_URL#"] = $this->getSiteUrl();
 
-				if(empty($template->from) || empty($template->to))
-					continue;
+				foreach($event->templates as $template)
+				{
+					$template->replaceData($params);
 
-				// Create the message
-				$message = Swift_Message::newInstance();
-				$message->setFrom($template->from);
-				$message->setTo($template->to);
+					if(empty($template->from) || empty($template->to))
+						continue;
 
-				if(!empty($template->subject))
-					$message->setSubject($template->subject);
+					// Create the message
+					$message = Swift_Message::newInstance();
+					$message->setFrom($template->from);
+					$message->setTo($template->to);
 
-				if(!empty($template->content_type))
-					$message->setContentType($template->getContentType());
+					if(!empty($template->subject))
+						$message->setSubject($template->subject);
 
-				if(!empty($template->body))
-					$message->setBody($template->body);
+					if(!empty($template->content_type))
+						$message->setContentType($template->getContentType());
 
-				if(!empty($template->priority))
-					$message->setPriority($template->priority);
+					if(!empty($template->body))
+						$message->setBody($template->body);
 
-				if(!empty($template->reply_to))
-					$message->setReplyTo($template->reply_to);
+					if(!empty($template->priority))
+						$message->setPriority($template->priority);
 
-				if(!empty($template->cc))
-					$message->setCc($template->cc);
+					if(!empty($template->reply_to))
+						$message->setReplyTo($template->reply_to);
 
-				if(!empty($template->bcc))
-					$message->setBcc($template->bcc);
+					if(!empty($template->cc))
+						$message->setCc($template->cc);
 
-
-				// Send message
-				if($this->logging === true)
-					self::log($message);
-
-				if($this->dryRun !== true)
-					$this->getMailer()->send($message);
+					if(!empty($template->bcc))
+						$message->setBcc($template->bcc);
+				}
 			}
 		}
+		
+		// Send message
+		if($this->logging === true)
+			self::log($message);
+
+		if($this->dryRun !== true)
+			return $this->getMailer()->send($message);
 	}
 
 	/**
@@ -234,7 +279,7 @@ class YiiMail extends CApplicationComponent
 	 * Site name
 	 * @return string
 	 */
-	protected function getSiteName()
+	public function getSiteName()
 	{
 		if($this->siteName === null)
 		{
@@ -247,7 +292,7 @@ class YiiMail extends CApplicationComponent
 	 * Site name
 	 * @return string
 	 */
-	protected function getSiteEmail()
+	public function getSiteEmail()
 	{
 		if($this->siteEmail === null)
 		{
@@ -260,7 +305,7 @@ class YiiMail extends CApplicationComponent
 	 * Site name
 	 * @return string
 	 */
-	protected function getSiteUrl()
+	public function getSiteUrl()
 	{
 		if($this->siteUrl === null)
 		{
