@@ -148,6 +148,13 @@ class YiiMail extends CApplicationComponent
 
 			if(!empty($eventCode["bcc"]))
 				$message->setBcc($eventCode["bcc"]);
+
+			// Send message
+			if($this->logging === true)
+				self::log($message);
+
+			if($this->dryRun !== true)
+				return $this->getMailer()->send($message);
 		}
 		else
 		{
@@ -203,16 +210,17 @@ class YiiMail extends CApplicationComponent
 
 					if(!empty($template->bcc))
 						$message->setBcc($template->bcc);
+
+
+					// Send message
+					if($this->logging === true)
+						self::log($message);
+
+					if($this->dryRun !== true)
+						$this->getMailer()->send($message);
 				}
 			}
 		}
-		
-		// Send message
-		if($this->logging === true)
-			self::log($message);
-
-		if($this->dryRun !== true)
-			return $this->getMailer()->send($message);
 	}
 
 	/**
